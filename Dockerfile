@@ -8,6 +8,7 @@ ARG NODE_TAG=erbium-alpine3.11
 
 # Default to production, compose overrides this to development on build and run
 ARG NODE_ENV=production
+ARG DOMAIN=pietrum.pl
 ARG HOST=0.0.0.0
 ARG PORT=8080
 
@@ -17,6 +18,7 @@ ARG PORT=8080
 FROM node:${NODE_TAG} as develop
 MAINTAINER Fulkman <fulkman@pietrum.pl>
 
+ARG DOMAIN
 ARG NODE_ENV
 ENV NODE_ENV=$NODE_ENV
 ARG HOST
@@ -48,6 +50,10 @@ npm uninstall -g node-gyp; \
 apk del make gcc g++ python; \
 rm -rf ~/.cache
 
+LABEL traefik.enable=true
+LABEL traefik.http.routers.website-pietrum.rule="Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
+LABEL traefik.http.routers.website-pietrum.entrypoints=http
+
 CMD npm run develop
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -75,6 +81,7 @@ npm start;
 FROM busybox:${BUSYBOX_TAG} as httpd
 MAINTAINER Fulkman <fulkman@pietrum.pl>
 
+ARG DOMAIN
 ARG HOST
 ENV HOST=$HOST
 ARG PORT
@@ -85,5 +92,9 @@ EXPOSE $PORT
 RUN mkdir -p /data
 WORKDIR /data
 COPY --from=builder /usr/src/app/dist .
+
+LABEL traefik.enable=true
+LABEL traefik.http.routers.website-pietrum.rule="Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
+LABEL traefik.http.routers.website-pietrum.entrypoints=http
 
 CMD busybox httpd -vv -f -p ${HOST}:${PORT}

@@ -8,9 +8,15 @@ services:
       target: develop
       args:
         - NODE_ENV=${NODE_ENV:-development}
-    ports:
-      - ${PORT_PUBLISHED:-80}:${PORT:-8080}
     volumes:
       - ./src:/usr/src/app/src:rw
     environment:
+      - DOMAIN=${DOMAIN:-local.pietrum.pl}
       - NODE_ENV=${NODE_ENV:-development}
+    labels:
+      - "traefik.http.routers.website-pietrum.rule=Host(`${DOMAIN:-local.pietrum.pl}`) || Host(`${DOMAIN:-www.local.pietrum.pl}`)"
+
+networks:
+  default:
+    external: true
+    name: hxh
